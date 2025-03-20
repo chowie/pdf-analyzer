@@ -8,12 +8,17 @@ import ai_interface
 class TestAIInterface(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        # Ensure we have a mock API key for testing
-        os.environ['OPENAI_API_KEY'] = 'test-key'
+        # Set up test environment variables
+        os.environ.update({
+            'OPENAI_API_KEY': 'test-key',
+            'LOG_LEVEL': 'DEBUG',
+            'MAX_PDF_SIZE_MB': '20',
+            'ALLOW_IMAGES': 'true'
+        })
 
     def setUp(self):
         # Set up mock OpenAI client before each test
-        self.patcher = patch('ai_interface.OpenAI', MockOpenAI)
+        self.patcher = patch('ai_interface.get_openai_client', return_value=MockOpenAI())
         self.patcher.start()
 
     def tearDown(self):

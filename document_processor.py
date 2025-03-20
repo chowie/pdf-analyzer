@@ -1,8 +1,19 @@
 import io
+import os
 import base64
 from PIL import Image
 from PyPDF2 import PdfReader
 import logging
+from config import MAX_PDF_SIZE_MB, ALLOW_IMAGES
+
+def validate_pdf_size(file_path):
+    """Check if PDF file size is within allowed limit."""
+    size_mb = os.path.getsize(file_path) / (1024 * 1024)
+    if size_mb > MAX_PDF_SIZE_MB:
+        raise ValueError(
+            f"PDF file size ({size_mb:.1f}MB) exceeds maximum allowed size "
+            f"({MAX_PDF_SIZE_MB}MB)"
+        )
 
 def extract_text_from_page(page):
     """Extract text content from a PDF page."""
@@ -39,6 +50,8 @@ def extract_images_from_page(page):
 
 def extract_pdf_content(file_path):
     """Extract both text and images from a PDF file."""
+    validate_pdf_size(file_path)
+
     content = {
         'text': [],
         'images': [],
@@ -64,9 +77,10 @@ def extract_pdf_content(file_path):
                 text = extract_text_from_page(page)
                 content['text'].append(text)
 
-                # Extract images
-                images = extract_images_from_page(page)
-                content['images'].extend(images)
+                # Extract images if allowed
+                if ALLOW_IMAGES:
+                    images = extract_images_from_page(page)
+                    content['images'].extend(images)
 
         return content
     except Exception as e:

@@ -3,6 +3,19 @@ AI Interface for PDF document analysis.
 
 For development and testing:
 1. Use the OpenAI playground (platform.openai.com/playground) to test and refine prompts
+   Example playground configurations:
+   - For text analysis:
+     Model: gpt-4o
+     System prompt: Analyze the following document text and provide a structured analysis including main topics, key points, and a summary.
+     Format: JSON
+   - For image analysis:
+     Model: gpt-4o
+     System prompt: Analyze this image and describe its content, context, and any relevant information it contains.
+     Input: text + image
+   - For document queries:
+     Model: gpt-4o
+     System prompt: You are a document analysis assistant. Use the provided document context to answer queries accurately and concisely.
+
 2. In test environments, this module uses a mock OpenAI client to avoid API costs
 3. The mock client provides predictable responses for testing purposes
 
@@ -11,21 +24,19 @@ Production usage:
 - Uses rate limiting and exponential backoff for API calls
 """
 
-import os
 import json
 import time
 import logging
 import random
 from openai import OpenAI, RateLimitError
+from config import OPENAI_API_KEY
 
 # the newest OpenAI model is "gpt-4o" which was released May 13, 2024.
 # do not change this unless explicitly requested by the user
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-if not OPENAI_API_KEY:
-    raise ValueError("OPENAI_API_KEY environment variable is not set")
 
-# Initialize OpenAI client
-openai = OpenAI(api_key=OPENAI_API_KEY)
+def get_openai_client():
+    """Get OpenAI client instance. This allows for easier mocking in tests."""
+    return OpenAI(api_key=OPENAI_API_KEY)
 
 def handle_rate_limit(func):
     """Decorator to handle rate limiting with exponential backoff."""
@@ -50,7 +61,13 @@ def handle_rate_limit(func):
 
 @handle_rate_limit
 def analyze_document(content):
-    """Analyze document content using OpenAI API."""
+    """Analyze document content using OpenAI API.
+
+    Playground testing:
+    1. Use the text content as input
+    2. Test with and without images
+    3. Verify JSON response format
+    """
     try:
         # Prepare the document content for analysis
         text_content = "\n".join(content['text'])
@@ -78,9 +95,16 @@ def analyze_document(content):
 
 @handle_rate_limit
 def analyze_text_content(text):
-    """Analyze text content using OpenAI API."""
+    """Analyze text content using OpenAI API.
+
+    Playground testing:
+    1. Copy sample text to playground
+    2. Use JSON mode
+    3. Verify structure of response
+    """
     try:
-        response = openai.chat.completions.create(
+        client = get_openai_client()
+        response = client.chat.completions.create(
             model="gpt-4o",
             messages=[
                 {
@@ -99,9 +123,16 @@ def analyze_text_content(text):
 
 @handle_rate_limit
 def analyze_image(base64_image):
-    """Analyze image content using OpenAI API."""
+    """Analyze image content using OpenAI API.
+
+    Playground testing:
+    1. Upload a test image
+    2. Use standard completion (not JSON)
+    3. Verify descriptive response
+    """
     try:
-        response = openai.chat.completions.create(
+        client = get_openai_client()
+        response = client.chat.completions.create(
             model="gpt-4o",
             messages=[
                 {
@@ -137,12 +168,19 @@ def analyze_metadata(metadata):
 
 @handle_rate_limit
 def query_documents(query, documents):
-    """Query the analyzed documents using OpenAI API."""
+    """Query the analyzed documents using OpenAI API.
+
+    Playground testing:
+    1. Format context as shown in prepare_query_context
+    2. Test with sample queries
+    3. Verify natural language responses
+    """
     try:
         # Prepare context from documents
         context = prepare_query_context(documents)
 
-        response = openai.chat.completions.create(
+        client = get_openai_client()
+        response = client.chat.completions.create(
             model="gpt-4o",
             messages=[
                 {

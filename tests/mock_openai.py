@@ -13,19 +13,16 @@ class MockCompletion:
     def __init__(self, choices):
         self.choices = [MockChoice(choice) for choice in choices]
 
-class MockChatCompletion:
-    def __init__(self):
-        self.completions = {}
-
+class MockCompletions:
     def create(self, model=None, messages=None, response_format=None, **kwargs):
         """Mock create completion."""
         # Default test responses
         response_map = {
-            'analyze_text': json.dumps({
+            'analyze_text': {
                 'main_topics': ['Test Document'],
                 'key_points': ['Sample PDF for testing', 'Contains text and graphics'],
                 'summary': 'A test document demonstrating PDF analysis capabilities'
-            }),
+            },
             'analyze_image': 'A test image containing simple geometric shapes',
             'query': 'This is a test document used for analyzing PDF processing capabilities.'
         }
@@ -35,13 +32,17 @@ class MockChatCompletion:
                for msg in (messages or [])):
             content = response_map['analyze_image']
         elif response_format and response_format.get('type') == 'json_object':
-            content = response_map['analyze_text']
+            content = json.dumps(response_map['analyze_text'])
         else:
             content = response_map['query']
 
         return MockCompletion([content])
 
+class MockChat:
+    def __init__(self):
+        self.completions = MockCompletions()
+
 class MockOpenAI:
     """Mock OpenAI client for testing."""
     def __init__(self, api_key=None):
-        self.chat = MockChatCompletion()
+        self.chat = MockChat()
