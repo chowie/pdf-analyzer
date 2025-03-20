@@ -89,3 +89,8 @@ Consider these areas for future prompt enhancement:
 1. Add support for more document formats
 2. Implement concurrent processing
 3. Add export functionality for analysis results
+
+## Model Information
+
+Note: The newest OpenAI model is "gpt-4o" which was released May 13, 2024.
+Do not change this unless explicitly requested by the user.
